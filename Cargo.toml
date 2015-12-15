@@ -1,0 +1,17 @@
+[package]
+name = "terrain_display"
+version = "0.1.0"
+authors = ["Sam Crow <samcrow@uw.edu>"]
+
+[lib]
+name = "terrain_display"
+crate-type = ["dylib"]
+
+[dependencies]
+libc = "^0.2"
+xplane_plugin = "^0.1"
+gl = "^0.5"
+
+
+[dependencies.xplm]
+path = "../xplm"
