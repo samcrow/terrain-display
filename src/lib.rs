@@ -4,7 +4,7 @@ extern crate xplane_plugin;
 use xplane_plugin::*;
 
 extern crate xplm;
-extern crate gl;
+extern crate xpgl;
 
 mod plugin;
 

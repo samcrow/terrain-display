@@ -10,8 +10,5 @@ crate-type = ["dylib"]
 [dependencies]
 libc = "^0.2"
 xplane_plugin = "^0.1"
-gl = "^0.5"
-
-
-[dependencies.xplm]
-path = "../xplm"
+xpgl = { path = "../xpgl" }
+xplm = { path = "../xplm" }
