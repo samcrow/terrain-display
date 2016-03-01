@@ -30,8 +30,6 @@ const GRAPHICS_STATE_2D : GraphicsState = GraphicsState {
 pub struct TerrainDisplayPlugin {
     /// The window that displays graphics
     window: Option<Rc<RefCell<Window>>>,
-    /// The map view
-    map: Option<Rc<Map>>,
 }
 
 impl Plugin for TerrainDisplayPlugin {
@@ -43,16 +41,13 @@ impl Plugin for TerrainDisplayPlugin {
 
         Some(TerrainDisplayPlugin {
             window: None,
-            map: None,
         })
     }
     fn enable(&mut self) {
         self.window = Some(Window::new(&Rect { left: 100, top: 1000, right: 400, bottom: 600 }));
         let mut map = Map::new(EquirectangularProjection);
         map.add_layer(TestLayer);
-        self.map = Some(Rc::new(map));
         {
-            let map_ref = self.map.as_ref().unwrap().clone();
             let local_draw_window = move |window: &mut Window| {
 
                 let rect = window.get_geometry();
@@ -67,7 +62,7 @@ impl Plugin for TerrainDisplayPlugin {
                     gl::Vertex2i(rect.right, rect.bottom);
                     gl::End();
                 }
-                map_ref.draw(rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top));
+                map.draw(rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top));
             };
 
             let mut window = self.window.as_mut().unwrap().borrow_mut();
@@ -77,7 +72,6 @@ impl Plugin for TerrainDisplayPlugin {
     }
     fn disable(&mut self) {
         self.window = None;
-        self.map = None;
     }
 
     fn info<'a, 'b, 'c>(&self) -> PluginInfo<'a, 'b, 'c> {
