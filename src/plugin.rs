@@ -8,7 +8,7 @@ use xplm::graphics::window::*;
 
 use mapcore::map::Map;
 use mapcore::layer::Layer;
-use mapcore::{LatLon, LatLonRect};
+use mapcore::{Latitude, Longitude, LatLon, LatLonRect, Polygon};
 use mapcore::projection::Projection;
 use mapcore::equirectangular::EquirectangularProjection;
 
@@ -62,7 +62,7 @@ impl Plugin for TerrainDisplayPlugin {
                     gl::Vertex2i(rect.right, rect.bottom);
                     gl::End();
                 }
-                map.draw(rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top));
+                map.draw(rect.left, rect.bottom, (rect.right - rect.left), (rect.top - rect.bottom));
             };
 
             let mut window = self.window.as_mut().unwrap().borrow_mut();
@@ -91,15 +91,28 @@ struct TestLayer;
 
 impl Layer for TestLayer {
     fn draw(&self, projection: &Projection, x: i32, y: i32, width: i32, height: i32) {
-        let height = height / 2;
         set_state(&GRAPHICS_STATE_2D);
         unsafe {
             gl::Color3f(0.8, 0.3, 0.0);
             gl::Begin(gl::QUADS);
-            gl::Vertex2i(x, y + height);
-            gl::Vertex2i(x , y );
-            gl::Vertex2i(x + width, y );
+            gl::Vertex2i(x, y);
+            gl::Vertex2i(x , y + height);
             gl::Vertex2i(x + width, y + height);
+            gl::Vertex2i(x + width, y);
+            gl::End();
+        }
+        // Draw a projected latitude-longitude rectangle
+        let poly = Polygon::new(&[LatLon{ latitude: Latitude(0.0), longitude: Longitude(0.0) },
+                                LatLon{ latitude: Latitude(10.0), longitude: Longitude(0.0) },
+                                LatLon{ latitude: Latitude(10.0), longitude: Longitude(10.0) },
+                                LatLon{ latitude: Latitude(0.0), longitude: Longitude(10.0) }]);
+        let projected = projection.project_poly(&poly);
+        unsafe {
+            gl::Color3f(0.0, 0.0, 1.0);
+            gl::Begin(gl::QUADS);
+            for point in projected.points() {
+                gl::Vertex2d((x as f64) + point.x, (y as f64) + point.y);
+            }
             gl::End();
         }
     }
