@@ -46,6 +46,7 @@ impl Plugin for TerrainDisplayPlugin {
     fn enable(&mut self) {
         self.window = Some(Window::new(&Rect { left: 100, top: 1000, right: 400, bottom: 600 }));
         let mut map = Map::new(EquirectangularProjection);
+        map.add_layer(WorldLayer::new());
         map.add_layer(TestLayer);
         {
             let local_draw_window = move |window: &mut Window| {
@@ -92,23 +93,52 @@ struct TestLayer;
 impl Layer for TestLayer {
     fn draw(&self, projection: &Projection, x: i32, y: i32, width: i32, height: i32) {
         set_state(&GRAPHICS_STATE_2D);
-        unsafe {
-            gl::Color3f(0.8, 0.3, 0.0);
-            gl::Begin(gl::QUADS);
-            gl::Vertex2i(x, y);
-            gl::Vertex2i(x , y + height);
-            gl::Vertex2i(x + width, y + height);
-            gl::Vertex2i(x + width, y);
-            gl::End();
-        }
         // Draw a projected latitude-longitude rectangle
-        let poly = Polygon::new(&[LatLon{ latitude: Latitude(0.0), longitude: Longitude(0.0) },
-                                LatLon{ latitude: Latitude(10.0), longitude: Longitude(0.0) },
-                                LatLon{ latitude: Latitude(10.0), longitude: Longitude(10.0) },
-                                LatLon{ latitude: Latitude(0.0), longitude: Longitude(10.0) }]);
+        let poly = Polygon::new(&[LatLon{ latitude: Latitude(37.41), longitude: Longitude(-122.29) },
+                                LatLon{ latitude: Latitude(47.66), longitude: Longitude(-122.27) },
+                                LatLon{ latitude: Latitude(51.507222), longitude: Longitude(-0.1275) },
+                                LatLon{ latitude: Latitude(40.383333), longitude: Longitude(-3.716667) }]);
         let projected = projection.project_poly(&poly);
         unsafe {
             gl::Color3f(0.0, 0.0, 1.0);
+            gl::Begin(gl::QUADS);
+            for point in projected.points() {
+                gl::Vertex2d((x as f64) + point.x, (y as f64) + point.y);
+            }
+            gl::End();
+        }
+    }
+
+    fn bounds(&self) -> Option<LatLonRect> {
+        None
+    }
+}
+
+///
+/// Draws a rectangle covering the whole world
+///
+struct WorldLayer {
+    /// A Lat/Lon polygon that spans the world
+    world: Polygon<LatLon>
+}
+
+impl WorldLayer {
+    pub fn new() -> WorldLayer {
+        WorldLayer {
+            world: Polygon::new(&[LatLon{ latitude: Latitude(-90.0), longitude: Longitude(-180.0) },
+                                    LatLon{ latitude: Latitude(90.0), longitude: Longitude(-180.0) },
+                                    LatLon{ latitude: Latitude(90.0), longitude: Longitude(180.0) },
+                                    LatLon{ latitude: Latitude(-90.0), longitude: Longitude(180.0) }]),
+        }
+    }
+}
+
+impl Layer for WorldLayer {
+    fn draw(&self, projection: &Projection, x: i32, y: i32, width: i32, height: i32) {
+        set_state(&GRAPHICS_STATE_2D);
+        let projected = projection.project_poly(&self.world);
+        unsafe {
+            gl::Color3f(0.0, 0.5, 1.0);
             gl::Begin(gl::QUADS);
             for point in projected.points() {
                 gl::Vertex2d((x as f64) + point.x, (y as f64) + point.y);
