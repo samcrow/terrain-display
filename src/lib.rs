@@ -5,6 +5,7 @@ use xplane_plugin::*;
 
 extern crate xplm;
 extern crate xpgl;
+extern crate mapcore;
 
 mod plugin;
 

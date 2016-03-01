@@ -12,3 +12,4 @@ libc = "^0.2"
 xplane_plugin = "^0.1"
 xpgl = { path = "../xpgl" }
 xplm = { path = "../xplm" }
+mapcore = { git = "https://github.com/samcrow/rust-mapcore" }

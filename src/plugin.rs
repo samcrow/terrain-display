@@ -6,6 +6,12 @@ use xplm::ui::*;
 use xplm::graphics::*;
 use xplm::graphics::window::*;
 
+use mapcore::map::Map;
+use mapcore::layer::Layer;
+use mapcore::{LatLon, LatLonRect};
+use mapcore::projection::Projection;
+use mapcore::equirectangular::EquirectangularProjection;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::mem;
@@ -24,6 +30,8 @@ const GRAPHICS_STATE_2D : GraphicsState = GraphicsState {
 pub struct TerrainDisplayPlugin {
     /// The window that displays graphics
     window: Option<Rc<RefCell<Window>>>,
+    /// The map view
+    map: Option<Rc<Map>>,
 }
 
 impl Plugin for TerrainDisplayPlugin {
@@ -35,12 +43,17 @@ impl Plugin for TerrainDisplayPlugin {
 
         Some(TerrainDisplayPlugin {
             window: None,
+            map: None,
         })
     }
     fn enable(&mut self) {
         self.window = Some(Window::new(&Rect { left: 100, top: 1000, right: 400, bottom: 600 }));
+        let mut map = Map::new(EquirectangularProjection);
+        map.add_layer(TestLayer);
+        self.map = Some(Rc::new(map));
         {
-            let local_draw_window = |window: &mut Window| {
+            let map_ref = self.map.as_ref().unwrap().clone();
+            let local_draw_window = move |window: &mut Window| {
 
                 let rect = window.get_geometry();
 
@@ -54,6 +67,7 @@ impl Plugin for TerrainDisplayPlugin {
                     gl::Vertex2i(rect.right, rect.bottom);
                     gl::End();
                 }
+                map_ref.draw(rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top));
             };
 
             let mut window = self.window.as_mut().unwrap().borrow_mut();
@@ -63,6 +77,7 @@ impl Plugin for TerrainDisplayPlugin {
     }
     fn disable(&mut self) {
         self.window = None;
+        self.map = None;
     }
 
     fn info<'a, 'b, 'c>(&self) -> PluginInfo<'a, 'b, 'c> {
@@ -75,5 +90,27 @@ impl Plugin for TerrainDisplayPlugin {
 
     fn stop(&mut self) {
 
+    }
+}
+
+struct TestLayer;
+
+impl Layer for TestLayer {
+    fn draw(&self, projection: &Projection, x: i32, y: i32, width: i32, height: i32) {
+        let height = height / 2;
+        set_state(&GRAPHICS_STATE_2D);
+        unsafe {
+            gl::Color3f(0.8, 0.3, 0.0);
+            gl::Begin(gl::QUADS);
+            gl::Vertex2i(x, y + height);
+            gl::Vertex2i(x , y );
+            gl::Vertex2i(x + width, y );
+            gl::Vertex2i(x + width, y + height);
+            gl::End();
+        }
+    }
+
+    fn bounds(&self) -> Option<LatLonRect> {
+        None
     }
 }
