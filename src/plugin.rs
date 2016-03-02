@@ -44,8 +44,10 @@ impl Plugin for TerrainDisplayPlugin {
         })
     }
     fn enable(&mut self) {
-        self.window = Some(Window::new(&Rect { left: 100, top: 1000, right: 400, bottom: 600 }));
-        let mut map = Map::new(EquirectangularProjection);
+        let window_rect = Rect { left: 100, top: 1000, right: 400, bottom: 600 };
+        self.window = Some(Window::new(&window_rect));
+        let mut map = Map::new(EquirectangularProjection, window_rect.left, window_rect.bottom,
+            window_rect.right - window_rect.left, window_rect.top - window_rect.bottom);
         map.add_layer(WorldLayer::new());
         map.add_layer(TestLayer);
         {
@@ -63,7 +65,7 @@ impl Plugin for TerrainDisplayPlugin {
                     gl::Vertex2i(rect.right, rect.bottom);
                     gl::End();
                 }
-                map.draw(rect.left, rect.bottom, (rect.right - rect.left), (rect.top - rect.bottom));
+                map.draw();
             };
 
             let mut window = self.window.as_mut().unwrap().borrow_mut();
